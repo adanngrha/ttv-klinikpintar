@@ -27,8 +27,8 @@
                   required
                   v-model="patient.gender"
                 >
-                  <option value="male">Laki-laki</option>
-                  <option value="female">Perempuan</option>
+                  <option value="male" :selected="patient.gender === male">Laki-laki</option>
+                  <option value="female" :selected="patient.gender === female">Perempuan</option>
                 </select>
               </div>
             </div>

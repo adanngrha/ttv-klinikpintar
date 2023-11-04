@@ -1,0 +1,33 @@
+version: "3"
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    stdin_open: true
+    ports:
+      - "8000:8000"
+    networks:
+      - webappnetwork
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - webappnetwork
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    networks:
+      - webappnetwork
+
+networks:
+  webappnetwork:
+    driver: bridge

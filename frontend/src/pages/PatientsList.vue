@@ -29,7 +29,10 @@
           <tr v-for="(patient, index) in filteredPatients">
             <td>{{ index + 1 }}</td>
             <td>{{ patient.name }}</td>
-            <td>{{ patient.gender }}</td>
+            <td>
+              <span v-if="patient.gender === 'male'">Laki-laki</span>  
+              <span v-else-if="patient.gender === 'female'">Perempuan</span>  
+            </td>
             <td>{{ patient.age }}</td>
             <td>{{ patient.blood_pressure }}</td>
             <td>{{ patient.pulse }}</td>
@@ -52,7 +55,7 @@
           </tr>
         </tbody>
       </table>
-      <nav aria-label="Page navigation example">
+      <nav aria-label="Page navigation example" v-if="patients.length > 0">
         <ul class="pagination justify-content-center">
           <li class="page-item" :class="{ disabled: currentPage === 1 }">
             <button
@@ -92,8 +95,10 @@
 </template>
 
 <script>
+import Swal from "sweetalert2";
 import Layout from "../components/Layout.vue";
 import axios from "axios";
+import { ref } from "vue";
 
 export default {
   name: "PatientsList",
@@ -104,7 +109,7 @@ export default {
     return {
       searchQuery: "",
       patients: [],
-      currentPage: 1,
+      currentPage: ref(1),
       perPage: 10,
     };
   },
@@ -117,7 +122,7 @@ export default {
         .get("http://localhost:3000/api/patients")
         .then((response) => {
           this.patients = response.data.data;
-          return response;
+          console.log(this.patients.length);
         })
         .catch((error) => {
           console.log(error);
@@ -127,11 +132,37 @@ export default {
       this.$router.push(`/edit/${id}`);
     },
     handleDelete(id) {
+      Swal.fire({
+        title: "Apakah anda yakin?",
+        text: "Data yang dihapus tidak dapat dikembalikan!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Iya, hapus!",
+        cancelButtonText: "Tidak, batalkan!",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.deletePatient(id);
+        }
+      });
+    },
+    deletePatient(id) {
       axios
         .delete(`http://localhost:3000/api/patients/${id}`)
-        .then((response) => {
-          this.fetchPatients();
-          return response;
+        .then(() => {
+          Swal.fire({
+            title: "Success",
+            text: "Data berhasil dihapus",
+            icon: "success",
+            confirmButtonText: "OK",
+          });
+          const indexToDelete = this.patients.findIndex(
+            (patient) => patient._id === id
+          );
+          if (indexToDelete !== -1) {
+            this.patients.splice(indexToDelete, 1);
+          }
+
+          // this.currentPage = 1;
         })
         .catch((error) => {
           console.log(error);
@@ -154,17 +185,17 @@ export default {
   computed: {
     filteredPatients() {
       const start = (this.currentPage - 1) * this.perPage;
-      const end = this.currentPage + this.perPage;
-      return this.patients
+      const end = start + this.perPage;
+      const filtered =  this.patients
         .filter((patient) => {
           return patient.name
             .toLowerCase()
             .includes(this.searchQuery.toLowerCase());
         })
-        .slice(start, end);
+        return filtered.slice(start, end);
     },
     pageCount() {
-      return Math.ceil(this.filteredPatients.length / this.perPage);
+      return Math.ceil(this.patients.length / this.perPage);
     },
   },
 };
